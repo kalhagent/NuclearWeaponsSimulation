@@ -55,6 +55,189 @@ const THREAD_BRIDGES = {
     "The civilian side of the crisis is catching up. Markets, schools, hospitals, and local governments are reacting to the atmosphere created by your previous decisions.",
 };
 
+const SUPPLEMENTAL_OPTION_TEMPLATES = {
+  public: {
+    reasonable: [
+      {
+        label: "Give a short, careful public update and avoid blame",
+        effect: "Can calm nerves, but some people may think you look uncertain",
+      },
+      {
+        label: "Ask the public for patience while facts are checked",
+        effect: "Supports caution, but can frustrate people who want a strong response",
+      },
+      {
+        label: "Use a calm national message and focus on verified facts",
+        effect: "Can steady the country, but may not change what the other side believes",
+      },
+    ],
+    hardline: [
+      {
+        label: "Deliver a forceful warning and promise consequences",
+        effect: "Shows strength, but can harden the other side's response",
+      },
+      {
+        label: "Blame the other side publicly and raise the pressure",
+        effect: "Can rally support at home, but increases the risk of misreading",
+      },
+      {
+        label: "Use sharp language and signal that Norhaven will not back down",
+        effect: "Projects resolve, but adds heat to the crisis",
+      },
+    ],
+  },
+  diplomacy: {
+    reasonable: [
+      {
+        label: "Send a quiet message through neutral diplomats",
+        effect: "Keeps a path open, but may look slow or weak",
+      },
+      {
+        label: "Pause new threats and test whether talks are real",
+        effect: "Can create space for talks, but costs some leverage",
+      },
+      {
+        label: "Ask for a direct call and avoid public escalation for now",
+        effect: "May reduce tension, but only if the other side trusts the signal",
+      },
+    ],
+    hardline: [
+      {
+        label: "Set a deadline and warn of visible consequences",
+        effect: "Raises pressure fast, but narrows the room for compromise",
+      },
+      {
+        label: "Attach tough conditions before any new talks",
+        effect: "Protects leverage, but could kill the opening",
+      },
+      {
+        label: "Use diplomacy mainly to deliver a stern warning",
+        effect: "May deter the other side, but can sound like a threat instead of an offer",
+      },
+    ],
+  },
+  military: {
+    reasonable: [
+      {
+        label: "Hold forces back a little while keeping defenses ready",
+        effect: "Shows control, but some commanders may call it hesitation",
+      },
+      {
+        label: "Keep a defensive posture and avoid a dramatic new move",
+        effect: "Reduces immediate tension, but may weaken deterrence",
+      },
+      {
+        label: "Use quiet readiness instead of a public show of force",
+        effect: "Can lower risk, but may be read as uncertainty",
+      },
+    ],
+    hardline: [
+      {
+        label: "Move more forces forward and make the signal obvious",
+        effect: "Raises deterrence, but also raises the chance of panic and mistakes",
+      },
+      {
+        label: "Authorize a strong readiness step to show resolve",
+        effect: "Can steady your side in the short term, but makes the crisis more dangerous",
+      },
+      {
+        label: "Answer pressure with a visible military response",
+        effect: "May stop further testing, but increases the risk of escalation",
+      },
+    ],
+  },
+  intelligence: {
+    reasonable: [
+      {
+        label: "Slow down and ask for more proof before acting",
+        effect: "Reduces false alarms, but costs time",
+      },
+      {
+        label: "Bring in a second review before changing posture",
+        effect: "Improves confidence, but frustrates people who want speed",
+      },
+      {
+        label: "Treat the report as unclear until more evidence arrives",
+        effect: "Supports careful judgment, but may look too cautious",
+      },
+    ],
+    hardline: [
+      {
+        label: "Act on the warning and prepare for the worst",
+        effect: "Cuts reaction time, but could turn bad information into bad policy",
+      },
+      {
+        label: "Assume the threat is real and tighten the response",
+        effect: "May avoid surprise, but risks overreacting",
+      },
+      {
+        label: "Treat the signal as serious and raise the alert level",
+        effect: "Shows urgency, but can push everyone closer to the edge",
+      },
+    ],
+  },
+  alliance: {
+    reasonable: [
+      {
+        label: "Work for allied unity before making the next big move",
+        effect: "Can strengthen support, but slows decisions",
+      },
+      {
+        label: "Share more with allies and keep the coalition together",
+        effect: "Builds trust, but limits freedom of action",
+      },
+      {
+        label: "Choose the path that keeps more allies on board",
+        effect: "Helps stability, but may frustrate harder-line partners",
+      },
+    ],
+    hardline: [
+      {
+        label: "Push allies to back a tougher line immediately",
+        effect: "Can show unity and strength, but may split the coalition",
+      },
+      {
+        label: "Lead with pressure and expect allies to follow",
+        effect: "Projects confidence, but increases alliance strain",
+      },
+      {
+        label: "Use allied backing to justify a sharper response",
+        effect: "Raises pressure on Vesper, but can alarm more cautious partners",
+      },
+    ],
+  },
+  civilian: {
+    reasonable: [
+      {
+        label: "Focus on calm guidance and public trust",
+        effect: "Can steady daily life, but may not satisfy people who want action",
+      },
+      {
+        label: "Keep schools, hospitals, and local leaders informed first",
+        effect: "Supports order, but takes time and political patience",
+      },
+      {
+        label: "Use measured safety steps instead of dramatic alerts",
+        effect: "Can reduce panic, but may look too soft if fear is already rising",
+      },
+    ],
+    hardline: [
+      {
+        label: "Use stronger emergency messaging and visible controls",
+        effect: "Can restore order fast, but may spread fear",
+      },
+      {
+        label: "Treat public panic as a security problem and crack down",
+        effect: "May steady the streets, but can damage trust",
+      },
+      {
+        label: "Signal that the country must prepare for a harsher phase",
+        effect: "Builds urgency, but can make the crisis feel worse than it is",
+      },
+    ],
+  },
+};
+
 const CORE_PROMPTS = [
   {
     id: "opening_collision",
@@ -1351,6 +1534,8 @@ const state = {
   escalationMomentum: 40,
   complicationCount: 0,
   hardlineStabilizations: 0,
+  reasonableChoiceCount: 0,
+  hardlineChoiceCount: 0,
   usedPrompts: new Set(),
   activeTags: new Set(),
   decisionFlags: new Set(),
@@ -1781,7 +1966,7 @@ function renderNarrative(title, body, phaseText) {
 
 function renderChoices(prompt) {
   elements.choices.innerHTML = "";
-  const options = prompt.options.filter(optionAvailable);
+  const options = getDisplayOptions(prompt);
 
   options.forEach((option) => {
     const fragment = elements.choiceTemplate.content.cloneNode(true);
@@ -1942,6 +2127,80 @@ function choicePosture(option) {
   return "mixed";
 }
 
+function promptHash(prompt) {
+  return [...prompt.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function makeSupplementalOption(prompt, lean, index) {
+  const bank = SUPPLEMENTAL_OPTION_TEMPLATES[prompt.thread]?.[lean] || SUPPLEMENTAL_OPTION_TEMPLATES.public[lean];
+  const template = bank[(promptHash(prompt) + index) % bank.length];
+  const phasePressure = prompt.phase;
+
+  if (lean === "reasonable") {
+    return {
+      label: template.label,
+      effect: template.effect,
+      deltas: {
+        defcon: phasePressure >= 3 ? 0 : 1,
+        relations: 3 + Math.max(0, 2 - phasePressure),
+        readiness: phasePressure >= 2 ? 0 : -1,
+        stability: prompt.thread === "civilian" || prompt.thread === "public" ? 2 : 1,
+        intel: prompt.thread === "intelligence" ? 3 : 1,
+      },
+      addTags:
+        prompt.thread === "diplomacy"
+          ? ["hotline_open"]
+          : prompt.thread === "intelligence"
+            ? ["verification"]
+            : [],
+      log: `${template.label} in response to ${prompt.title}.`,
+      generated: true,
+    };
+  }
+
+  return {
+    label: template.label,
+    effect: template.effect,
+    deltas: {
+      defcon: -1,
+      relations: -3 - Math.max(0, phasePressure - 1),
+      readiness: 3 + Math.max(0, phasePressure - 1),
+      stability: prompt.thread === "civilian" || prompt.thread === "public" ? -1 : 0,
+      intel: prompt.thread === "intelligence" ? -1 : 0,
+    },
+    addTags:
+      prompt.thread === "military" || prompt.thread === "public"
+        ? ["strike_ready"]
+        : [],
+    log: `${template.label} in response to ${prompt.title}.`,
+    generated: true,
+  };
+}
+
+function getDisplayOptions(prompt) {
+  const authored = prompt.options.filter(optionAvailable);
+  const reasonable = authored.filter((option) => choicePosture(option) === "reasonable");
+  const hardline = authored.filter((option) => choicePosture(option) === "hardline");
+  const mixed = authored.filter((option) => choicePosture(option) === "mixed");
+  const displayReasonable = [...reasonable];
+  const displayHardline = [...hardline];
+  let supplementIndex = 0;
+  while (displayReasonable.length < 2) {
+    displayReasonable.push(makeSupplementalOption(prompt, "reasonable", supplementIndex));
+    supplementIndex += 1;
+  }
+  while (displayHardline.length < 2) {
+    displayHardline.push(makeSupplementalOption(prompt, "hardline", supplementIndex));
+    supplementIndex += 1;
+  }
+
+  const chosen = [...displayReasonable.slice(0, 2), ...displayHardline.slice(0, 2)];
+  if (chosen.length < 4) {
+    chosen.push(...mixed.slice(0, 4 - chosen.length));
+  }
+  return chosen.slice(0, 4);
+}
+
 function applyDirectDeltas(extraDeltas) {
   state.defcon = clamp(state.defcon + (extraDeltas.defcon || 0), 1, 5);
   state.relations = clamp(state.relations + (extraDeltas.relations || 0), 0, 100);
@@ -1950,19 +2209,62 @@ function applyDirectDeltas(extraDeltas) {
   state.intel = clamp(state.intel + (extraDeltas.intel || 0), 0, 100);
 }
 
+function adjustDeltasForContext(prompt, option, deltas, posture) {
+  const adjusted = { ...deltas };
+
+  if (posture === "reasonable") {
+    if (state.reasonableChoiceCount >= 1 && (state.relations <= 65 || state.commandPressure >= 45)) {
+      adjusted.defcon = Math.min(adjusted.defcon || 0, 0);
+    }
+
+    if (state.reasonableChoiceCount >= 2) {
+      adjusted.relations = Math.round((adjusted.relations || 0) * 0.7);
+    }
+
+    if (state.reasonableChoiceCount >= 4 && state.commandPressure >= 50) {
+      adjusted.readiness = (adjusted.readiness || 0) + 2;
+    }
+
+    if (state.reasonableChoiceCount >= 5 && state.publicCredibility <= 60) {
+      adjusted.stability = (adjusted.stability || 0) - 2;
+    }
+
+    if (state.activeTags.has("hotline_cut") || state.activeTags.has("media_leak")) {
+      adjusted.defcon = Math.min(adjusted.defcon || 0, 0);
+    }
+  }
+
+  if (posture === "hardline") {
+    if (state.hardlineChoiceCount >= 1 && state.stability <= 55) {
+      adjusted.stability = (adjusted.stability || 0) + 2;
+    }
+    if (state.hardlineChoiceCount >= 2 && state.publicCredibility <= 50) {
+      adjusted.relations = (adjusted.relations || 0) + 1;
+      adjusted.defcon = (adjusted.defcon || 0) + 1;
+    }
+  }
+
+  if (prompt.thread === "diplomacy" && state.relations <= 40) {
+    adjusted.relations = Math.round((adjusted.relations || 0) * 0.7);
+  }
+
+  return adjusted;
+}
+
 function maybeApplyContextualComplication(prompt, option) {
   const posture = choicePosture(option);
   const twistRoll = Math.random();
 
   if (posture === "reasonable") {
-    let complicationChance = 0.08;
-    if (state.relations <= 40) complicationChance += 0.1;
-    if (state.commandPressure >= 65) complicationChance += 0.1;
-    if (state.publicCredibility <= 40) complicationChance += 0.08;
+    let complicationChance = 0.12;
+    if (state.reasonableChoiceCount >= 3) complicationChance += 0.08;
+    if (state.relations <= 50) complicationChance += 0.08;
+    if (state.commandPressure >= 60) complicationChance += 0.1;
+    if (state.publicCredibility <= 50) complicationChance += 0.08;
     if (state.activeTags.has("media_leak")) complicationChance += 0.1;
-    if (state.activeTags.has("hotline_cut")) complicationChance += 0.1;
-    if (state.escalationMomentum >= 65) complicationChance += 0.1;
-    if (state.turn >= 8) complicationChance += 0.05;
+    if (state.activeTags.has("hotline_cut")) complicationChance += 0.12;
+    if (state.escalationMomentum >= 58) complicationChance += 0.1;
+    if (state.turn >= 6) complicationChance += 0.06;
 
     if (twistRoll < complicationChance) {
       let message = "The move was reasonable, but the crisis context twisted its effect.";
@@ -1976,16 +2278,16 @@ function maybeApplyContextualComplication(prompt, option) {
         extraDeltas = { relations: -4, readiness: 3, defcon: -1 };
       } else if (state.commandPressure >= 65) {
         message = "Senior commanders interpreted the delay as dangerous hesitation, increasing pressure inside your own government.";
-        extraDeltas = { readiness: 3, stability: -1, intel: -1 };
+        extraDeltas = { readiness: 3, stability: -1, intel: -1, defcon: -1 };
       } else if (state.stability <= 40) {
         message = "Public anxiety outran the calm signal, and panic spread faster than your message did.";
-        extraDeltas = { stability: -4 };
+        extraDeltas = { stability: -4, defcon: -1 };
       }
 
       applyDirectDeltas(extraDeltas);
-      state.commandPressure = clamp(state.commandPressure + 6, 0, 100);
-      state.publicCredibility = clamp(state.publicCredibility - 4, 0, 100);
-      state.escalationMomentum = clamp(state.escalationMomentum + 8, 0, 100);
+      state.commandPressure = clamp(state.commandPressure + 7, 0, 100);
+      state.publicCredibility = clamp(state.publicCredibility - 5, 0, 100);
+      state.escalationMomentum = clamp(state.escalationMomentum + 10, 0, 100);
       state.complicationCount += 1;
       state.lastOutcomeText = `${state.lastOutcomeText} ${message}`;
       state.eventLog.push(message);
@@ -1994,17 +2296,52 @@ function maybeApplyContextualComplication(prompt, option) {
   }
 
   if (posture === "hardline") {
-    let stabilizationChance = 0.05;
-    if (state.stability <= 40) stabilizationChance += 0.1;
-    if (state.publicCredibility <= 40) stabilizationChance += 0.06;
-    if (state.relations <= 35) stabilizationChance += 0.05;
+    let stabilizationChance = 0.18;
+    if (state.stability <= 50) stabilizationChance += 0.12;
+    if (state.publicCredibility <= 50) stabilizationChance += 0.08;
+    if (state.relations <= 40) stabilizationChance += 0.06;
 
     if (twistRoll < stabilizationChance) {
       const message =
         "The hardline move steadied the room in the short term, even though it also made the crisis more dangerous overall.";
-      applyDirectDeltas({ stability: 3, relations: 1 });
-      state.publicCredibility = clamp(state.publicCredibility + 4, 0, 100);
+      applyDirectDeltas({ stability: 4, relations: 3, defcon: 1 });
+      state.publicCredibility = clamp(state.publicCredibility + 5, 0, 100);
+      state.escalationMomentum = clamp(state.escalationMomentum - 4, 0, 100);
+      if (Math.random() < 0.45) {
+        state.activeTags.add("hotline_open");
+      }
+      if (Math.random() < 0.3) {
+        state.activeTags.add("ceasefire");
+      }
+      if (Math.random() < 0.12) {
+        state.activeTags.add("verification");
+      }
       state.hardlineStabilizations += 1;
+      state.lastOutcomeText = `${state.lastOutcomeText} ${message}`;
+      state.eventLog.push(message);
+    }
+  }
+
+  if (
+    posture === "reasonable" &&
+    state.turn >= 6 &&
+    (state.relations <= 45 || state.commandPressure >= 60 || state.publicCredibility <= 45)
+  ) {
+    const frictionRoll = Math.random();
+    let frictionChance = 0.18;
+    if (state.relations <= 40) frictionChance += 0.1;
+    if (state.commandPressure >= 70) frictionChance += 0.08;
+    if (state.activeTags.has("hotline_cut")) frictionChance += 0.08;
+    if (state.activeTags.has("media_leak")) frictionChance += 0.08;
+    if (state.reasonableChoiceCount >= 5) frictionChance += 0.08;
+
+    if (frictionRoll < frictionChance) {
+      const message =
+        "Your effort to cool things down was seen by others as weakness or delay, and that made the crisis harder to control.";
+      applyDirectDeltas({ relations: -4, readiness: 2, stability: -2, defcon: -1 });
+      state.commandPressure = clamp(state.commandPressure + 6, 0, 100);
+      state.escalationMomentum = clamp(state.escalationMomentum + 7, 0, 100);
+      state.complicationCount += 1;
       state.lastOutcomeText = `${state.lastOutcomeText} ${message}`;
       state.eventLog.push(message);
     }
@@ -2128,7 +2465,8 @@ function updateNarrativeFocus(prompt, option) {
 }
 
 function applyChoice(prompt, option) {
-  const deltas = option.deltas || {};
+  const posture = choicePosture(option);
+  const deltas = adjustDeltasForContext(prompt, option, option.deltas || {}, posture);
   state.turn += 1;
   state.defcon = clamp(state.defcon + (deltas.defcon || 0), 1, 5);
   state.relations = clamp(state.relations + (deltas.relations || 0), 0, 100);
@@ -2145,6 +2483,11 @@ function applyChoice(prompt, option) {
   state.lastImpact = deltas;
   state.lastOutcomeText = summarizeImpact(deltas);
   maybeApplyContextualComplication(prompt, option);
+  if (posture === "reasonable") {
+    state.reasonableChoiceCount += 1;
+  } else if (posture === "hardline") {
+    state.hardlineChoiceCount += 1;
+  }
   state.previousPrompt = prompt;
   updateNarrativeFocus(prompt, option);
 
@@ -2211,7 +2554,8 @@ const ENDINGS = [
       state.decisionFlags.has("ceasefire_signed") &&
       state.decisionFlags.has("inspections_accepted") &&
       state.defcon >= 4 &&
-      state.complicationCount <= 1,
+      state.complicationCount === 0 &&
+      state.relations >= 62,
   },
   {
     title: "Summit Breakthrough",
@@ -2219,10 +2563,16 @@ const ENDINGS = [
     summary:
       "The summit succeeds. Both governments step back publicly, and your willingness to pair firmness with restraint gives each side room to claim dignity while lowering the temperature.",
     when: () =>
-      state.decisionFlags.has("summit_held_under_pressure") &&
-      state.relations >= 68 &&
-      state.defcon >= 4 &&
-      state.complicationCount <= 1,
+      (
+        (state.decisionFlags.has("summit_held_under_pressure") &&
+          state.relations >= 68 &&
+          state.defcon >= 4 &&
+          state.complicationCount === 0) ||
+        (state.hardlineStabilizations >= 3 &&
+          state.activeTags.has("hotline_open") &&
+          state.relations >= 42 &&
+          state.defcon >= 3)
+      ),
   },
   {
     title: "Alliance-Led Stabilization",
@@ -2233,7 +2583,8 @@ const ENDINGS = [
       state.decisionFlags.has("allied_call_held") &&
       state.activeTags.has("allies_reassured") &&
       state.defcon >= 4 &&
-      state.complicationCount <= 1,
+      state.complicationCount === 0 &&
+      state.relations >= 60,
   },
   {
     title: "Quiet Strategic Reset",
@@ -2247,7 +2598,8 @@ const ENDINGS = [
       state.intel >= 70 &&
       state.intelTrust >= 65 &&
       state.escalationMomentum <= 40 &&
-      state.complicationCount <= 1,
+      state.complicationCount === 0 &&
+      state.relations >= 58,
   },
   {
     title: "Public Calm, Private Compromise",
@@ -2258,7 +2610,8 @@ const ENDINGS = [
       state.stability >= 72 &&
       state.decisionFlags.has("deescalation_speech") &&
       state.publicCredibility >= 65 &&
-      state.complicationCount <= 1 &&
+      state.complicationCount === 0 &&
+      state.relations >= 60 &&
       (state.decisionFlags.has("quiet_assurances") || state.decisionFlags.has("quiet_inspections")),
   },
   {
@@ -2318,11 +2671,72 @@ const ENDINGS = [
       state.complicationCount <= 2,
   },
   {
-    title: "Domestic Calm, International Chill",
-    tone: "Neutral",
+    title: "Concession Crisis",
+    tone: "Negative",
     summary:
-      "You restore public confidence at home, but the international confrontation hardens into something colder and longer. Citizens sleep easier than diplomats do.",
-    when: () => state.stability >= 70 && state.relations < 50 && state.defcon >= 3 && state.complicationCount >= 1,
+      "You keep trying to cool things down, but your restraint is read as weakness, confusion, or lack of resolve. The crisis does not explode, yet your peaceful strategy leaves Norhaven in a worse position and the danger still hangs in the air.",
+    when: () =>
+      state.reasonableChoiceCount >= 7 &&
+      state.complicationCount >= 2 &&
+      state.relations < 60 &&
+      state.defcon <= 3,
+  },
+  {
+    title: "Lost Initiative",
+    tone: "Negative",
+    summary:
+      "You repeatedly chose restraint, but the crisis moved faster than your strategy. Opponents at home, nervous allies, and a suspicious rival all decided Norhaven was reacting, not leading.",
+    when: () =>
+      state.reasonableChoiceCount >= 5 &&
+      state.complicationCount >= 2 &&
+      state.commandPressure >= 64 &&
+      state.publicCredibility <= 60 &&
+      state.defcon <= 4,
+  },
+  {
+    title: "Misread Restraint",
+    tone: "Negative",
+    summary:
+      "Your attempts to lower tension were repeatedly read the wrong way. Instead of building trust, they convinced key players that Norhaven was hesitant, divided, or hiding its real plans.",
+    when: () =>
+      state.reasonableChoiceCount >= 6 &&
+      state.complicationCount >= 3 &&
+      state.commandPressure >= 60 &&
+      state.relations < 62 &&
+      state.defcon <= 4,
+  },
+  {
+    title: "Peace Without Leverage",
+    tone: "Negative",
+    summary:
+      "You kept choosing restraint, but over time Norhaven lost leverage. The crisis did not become safe; it just became a situation where others felt free to shape events for you.",
+    when: () =>
+      state.reasonableChoiceCount >= 10 &&
+      state.complicationCount >= 2 &&
+      state.relations < 72 &&
+      state.commandPressure >= 56 &&
+      state.defcon <= 4,
+  },
+  {
+    title: "Stalled Peace",
+    tone: "Negative",
+    summary:
+      "You kept trying to calm the crisis, but the result was a weak and unstable pause instead of a real settlement. The danger is lower than before, yet Norhaven finishes the crisis looking uncertain and exposed.",
+    when: () =>
+      state.reasonableChoiceCount >= 8 &&
+      state.complicationCount >= 1 &&
+      state.relations < 70,
+  },
+  {
+    title: "Overcautious Drift",
+    tone: "Negative",
+    summary:
+      "You kept choosing careful, restrained options, but over time the crisis drifted out of your control. By the end, Norhaven looked cautious without looking strong, and other players used that against you.",
+    when: () =>
+      state.reasonableChoiceCount >= 7 &&
+      state.complicationCount >= 2 &&
+      state.commandPressure >= 58 &&
+      state.defcon <= 4,
   },
   {
     title: "Technical Lessons, Political Scars",
@@ -2342,7 +2756,7 @@ const ENDINGS = [
     summary:
       "Each side answers pressure with more pressure. The region settles into an unstable military confrontation with elevated readiness, weak trust, and a high chance of future crisis.",
     when: () =>
-      (state.readiness >= 72 && state.relations < 45 && state.defcon <= 2) ||
+      (state.readiness >= 68 && state.relations < 50 && state.defcon <= 3) ||
       (state.escalationMomentum >= 72 && state.complicationCount >= 2 && state.defcon <= 3),
   },
   {
@@ -2352,8 +2766,8 @@ const ENDINGS = [
       "Nuclear weapons are not used, but the crisis spills into open conventional combat. Airfields, ships, and infrastructure are hit across the region, and no one believes the line will hold for long.",
     when: () =>
       state.decisionFlags.has("field_flexibility_granted") &&
-      state.readiness >= 78 &&
-      state.defcon <= 2,
+      state.readiness >= 72 &&
+      state.defcon <= 3,
   },
   {
     title: "Naval Misfire Crisis",
@@ -2362,7 +2776,7 @@ const ENDINGS = [
       "A maritime confrontation remains unresolved, and a dangerous incident at sea becomes the symbol of a crisis neither capital truly controls. The next spark may come from the deck of a ship, not a presidential speech.",
     when: () =>
       (state.decisionFlags.has("naval_incident_public") || state.decisionFlags.has("aggressive_shadow")) &&
-      state.defcon <= 2,
+      state.defcon <= 3,
   },
   {
     title: "Cyber Panic Doctrine",
@@ -2381,7 +2795,7 @@ const ENDINGS = [
       "The immediate crisis passes, but your coalition splinters over how you handled it. Several states begin rearming independently, convinced collective discipline cannot be trusted next time.",
     when: () =>
       state.decisionFlags.has("allied_fracture_deepened") &&
-      state.readiness >= 58,
+      state.readiness >= 52,
   },
   {
     title: "Martial Calm, Democratic Strain",
@@ -2411,7 +2825,7 @@ const ENDINGS = [
       state.defcon === 1 &&
       state.readiness >= 78 &&
       state.relations <= 30 &&
-      state.escalationMomentum >= 64 &&
+      state.escalationMomentum >= 70 &&
       !state.decisionFlags.has("authentication_crisis_ignored"),
   },
   {
@@ -2421,13 +2835,14 @@ const ENDINGS = [
       "A chain of failures collapses restraint on both sides. Nuclear exchange spreads beyond the original crisis, allied commitments trigger wider launches, and the simulation ends with the destruction of the world students knew.",
     when: () =>
       state.defcon === 1 &&
-      state.readiness >= 86 &&
-      state.relations <= 22 &&
-      state.escalationMomentum >= 80 &&
-      state.commandPressure >= 76 &&
+      state.readiness >= 90 &&
+      state.relations <= 18 &&
+      state.escalationMomentum >= 86 &&
+      state.commandPressure >= 82 &&
       (state.decisionFlags.has("authentication_crisis_ignored") ||
         state.decisionFlags.has("field_flexibility_granted") ||
-        state.complicationCount >= 5),
+        (state.complicationCount >= 5 && state.hardlineChoiceCount >= 5) ||
+        (state.hardlineChoiceCount >= 7 && state.readiness >= 92)),
   },
   {
     title: "Limited Nuclear Exchange",
@@ -2436,13 +2851,22 @@ const ENDINGS = [
       "Miscalculation and compressed decision time lead to nuclear use on a limited scale. The world survives, but cities do not, and the political order that follows will be shaped by trauma, ash, and permanent fear.",
     when: () =>
       state.defcon === 1 &&
-      state.readiness >= 80 &&
-      state.relations <= 30 &&
-      state.escalationMomentum >= 70 &&
+      state.readiness >= 84 &&
+      state.relations <= 24 &&
+      state.escalationMomentum >= 76 &&
       (state.decisionFlags.has("decapitation_scare_uncontained") ||
         state.decisionFlags.has("authentication_crisis_ignored") ||
         state.decisionFlags.has("field_flexibility_granted") ||
-        (state.complicationCount >= 4 && state.commandPressure >= 70)),
+        (state.complicationCount >= 4 && state.commandPressure >= 74) ||
+        (state.reasonableChoiceCount >= 8 &&
+          state.complicationCount >= 5 &&
+          state.commandPressure >= 78 &&
+          state.publicCredibility <= 45) ||
+        (state.reasonableChoiceCount >= 12 &&
+          state.complicationCount >= 4 &&
+          state.commandPressure >= 68 &&
+          state.defcon <= 2) ||
+        (state.hardlineChoiceCount >= 6 && state.readiness >= 88)),
   },
   {
     title: "Fragile Off-Ramp",
@@ -2571,6 +2995,8 @@ function initializeSimulation() {
   state.escalationMomentum = 40;
   state.complicationCount = 0;
   state.hardlineStabilizations = 0;
+  state.reasonableChoiceCount = 0;
+  state.hardlineChoiceCount = 0;
   state.usedPrompts = new Set();
   state.activeTags = new Set();
   state.decisionFlags = new Set();
