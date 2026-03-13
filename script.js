@@ -1585,7 +1585,7 @@ function getLeadSystem() {
 
 function recentDecisionSummary() {
   if (!state.history.length) {
-    return "The first reports are still coming in, and every advisor in the room knows the opening decision will shape the entire night.";
+    return "The first reports are still coming in, and everyone in the room knows your first choice could shape the whole night.";
   }
 
   const recent = state.history[state.history.length - 1];
@@ -1637,6 +1637,59 @@ function adaptNarrativeText(text) {
     .replaceAll("the road that got you here", "the path that has already opened");
 }
 
+function simplifyForStudents(text) {
+  if (!text) {
+    return text;
+  }
+
+  return text
+    .replaceAll("triggered", "started")
+    .replaceAll("fast-moving", "fast")
+    .replaceAll("rival nuclear state", "rival nuclear country")
+    .replaceAll("disputed waters", "contested waters")
+    .replaceAll("officials are shocked", "officials seem shocked")
+    .replaceAll("hardens its position", "locks into a harsher position")
+    .replaceAll("domestic opposition", "political opponents at home")
+    .replaceAll("satellite images", "satellite pictures")
+    .replaceAll("missile brigade", "missile unit")
+    .replaceAll("misread", "read the wrong way")
+    .replaceAll("intermediary", "go-between")
+    .replaceAll("off-ramp", "way out")
+    .replaceAll("contingency", "backup")
+    .replaceAll("deconfliction", "conflict-prevention")
+    .replaceAll("vulnerabilities", "weak points")
+    .replaceAll("disperse", "spread out")
+    .replaceAll("dispersal", "spreading out")
+    .replaceAll("relocate", "move")
+    .replaceAll("hardened sites", "secure bunkers")
+    .replaceAll("escalation", "things getting worse")
+    .replaceAll("de-escalation", "cooling things down")
+    .replaceAll("stabilize", "steady")
+    .replaceAll("stabilizing", "steadying")
+    .replaceAll("verification", "proof")
+    .replaceAll("credibility", "trust")
+    .replaceAll("mistrust", "lack of trust")
+    .replaceAll("catastrophe", "disaster")
+    .replaceAll("brittle", "fragile")
+    .replaceAll("volatile", "unstable")
+    .replaceAll("ambiguous", "unclear")
+    .replaceAll("coercive leverage", "pressure")
+    .replaceAll("authorizing execution", "allowing it to happen")
+    .replaceAll("reciprocal", "two-way")
+    .replaceAll("deterrence", "deterrence")
+    .replaceAll("transparency", "openness")
+    .replaceAll("strained", "tense")
+    .replaceAll("salvageable", "still fixable")
+    .replaceAll("civilian leadership", "civilian leaders")
+    .replaceAll("operational leaders", "military leaders")
+    .replaceAll("reaction speed", "speed")
+    .replaceAll("ambiguity", "uncertainty")
+    .replaceAll("ordinary people", "regular people")
+    .replaceAll("discipline", "self-control")
+    .replaceAll("under pressure", "when things get tense")
+    .replaceAll("Nowhere", "nowhere");
+}
+
 function advisorCommentary(prompt) {
   const comments = [];
 
@@ -1652,12 +1705,12 @@ function advisorCommentary(prompt) {
   }
   if (prompt.thread === "intelligence") {
     comments.push(
-      `${ADVISORS.sora} reminds the room that crisis data becomes less trustworthy when leaders reward speed over scrutiny.`
+      `${ADVISORS.sora} reminds the room that crisis data becomes less trustworthy when leaders care more about speed than careful checking.`
     );
   }
   if (prompt.thread === "civilian") {
     comments.push(
-      `${ADVISORS.ortiz} notes that the public is no longer watching from a distance; families and local leaders are starting to react to your decisions in real time.`
+      `${ADVISORS.ortiz} says the public is no longer watching from far away; families and local leaders are reacting to your choices in real time.`
     );
   }
   if (prompt.thread === "alliance") {
@@ -1683,6 +1736,19 @@ function advisorCommentary(prompt) {
 }
 
 function buildPromptNarrative(prompt) {
+  if (!state.history.length) {
+    const openingSegments = [prompt.body];
+    if (prompt.followup) {
+      openingSegments.push(prompt.followup);
+    }
+    openingSegments.push(describeTrend(getLeadStat()));
+    const hiddenLine = describeHiddenTrend();
+    if (hiddenLine) {
+      openingSegments.push(hiddenLine);
+    }
+    return openingSegments.join("\n\n");
+  }
+
   const bridge = adaptNarrativeText(THREAD_BRIDGES[prompt.thread]);
   const statLine = describeTrend(getLeadStat());
   const hiddenLine = describeHiddenTrend();
@@ -1705,9 +1771,9 @@ function buildPromptNarrative(prompt) {
 }
 
 function renderNarrative(title, body, phaseText) {
-  elements.screenTitle.textContent = title;
+  elements.screenTitle.textContent = simplifyForStudents(title);
   elements.phaseBadge.textContent = `Phase: ${phaseText}`;
-  elements.screenBody.innerHTML = body
+  elements.screenBody.innerHTML = simplifyForStudents(body)
     .split("\n")
     .map((paragraph) => `<p>${paragraph}</p>`)
     .join("");
@@ -1720,8 +1786,8 @@ function renderChoices(prompt) {
   options.forEach((option) => {
     const fragment = elements.choiceTemplate.content.cloneNode(true);
     const button = fragment.querySelector(".choice-card");
-    fragment.querySelector(".choice-label").textContent = option.label;
-    fragment.querySelector(".choice-effect").textContent = option.effect;
+    fragment.querySelector(".choice-label").textContent = simplifyForStudents(option.label);
+    fragment.querySelector(".choice-effect").textContent = simplifyForStudents(option.effect);
     button.addEventListener("click", () => applyChoice(prompt, option));
     elements.choices.appendChild(fragment);
   });
@@ -1889,13 +1955,14 @@ function maybeApplyContextualComplication(prompt, option) {
   const twistRoll = Math.random();
 
   if (posture === "reasonable") {
-    let complicationChance = 0.04;
-    if (state.relations <= 40) complicationChance += 0.08;
-    if (state.commandPressure >= 65) complicationChance += 0.08;
-    if (state.publicCredibility <= 40) complicationChance += 0.06;
-    if (state.activeTags.has("media_leak")) complicationChance += 0.07;
-    if (state.activeTags.has("hotline_cut")) complicationChance += 0.08;
-    if (state.escalationMomentum >= 65) complicationChance += 0.07;
+    let complicationChance = 0.08;
+    if (state.relations <= 40) complicationChance += 0.1;
+    if (state.commandPressure >= 65) complicationChance += 0.1;
+    if (state.publicCredibility <= 40) complicationChance += 0.08;
+    if (state.activeTags.has("media_leak")) complicationChance += 0.1;
+    if (state.activeTags.has("hotline_cut")) complicationChance += 0.1;
+    if (state.escalationMomentum >= 65) complicationChance += 0.1;
+    if (state.turn >= 8) complicationChance += 0.05;
 
     if (twistRoll < complicationChance) {
       let message = "The move was reasonable, but the crisis context twisted its effect.";
@@ -1927,10 +1994,10 @@ function maybeApplyContextualComplication(prompt, option) {
   }
 
   if (posture === "hardline") {
-    let stabilizationChance = 0.02;
-    if (state.stability <= 40) stabilizationChance += 0.08;
-    if (state.publicCredibility <= 40) stabilizationChance += 0.05;
-    if (state.relations <= 35) stabilizationChance += 0.04;
+    let stabilizationChance = 0.05;
+    if (state.stability <= 40) stabilizationChance += 0.1;
+    if (state.publicCredibility <= 40) stabilizationChance += 0.06;
+    if (state.relations <= 35) stabilizationChance += 0.05;
 
     if (twistRoll < stabilizationChance) {
       const message =
@@ -2144,7 +2211,7 @@ const ENDINGS = [
       state.decisionFlags.has("ceasefire_signed") &&
       state.decisionFlags.has("inspections_accepted") &&
       state.defcon >= 4 &&
-      state.complicationCount <= 2,
+      state.complicationCount <= 1,
   },
   {
     title: "Summit Breakthrough",
@@ -2155,7 +2222,7 @@ const ENDINGS = [
       state.decisionFlags.has("summit_held_under_pressure") &&
       state.relations >= 68 &&
       state.defcon >= 4 &&
-      state.complicationCount <= 2,
+      state.complicationCount <= 1,
   },
   {
     title: "Alliance-Led Stabilization",
@@ -2166,7 +2233,7 @@ const ENDINGS = [
       state.decisionFlags.has("allied_call_held") &&
       state.activeTags.has("allies_reassured") &&
       state.defcon >= 4 &&
-      state.complicationCount <= 2,
+      state.complicationCount <= 1,
   },
   {
     title: "Quiet Strategic Reset",
@@ -2191,7 +2258,7 @@ const ENDINGS = [
       state.stability >= 72 &&
       state.decisionFlags.has("deescalation_speech") &&
       state.publicCredibility >= 65 &&
-      state.complicationCount <= 2 &&
+      state.complicationCount <= 1 &&
       (state.decisionFlags.has("quiet_assurances") || state.decisionFlags.has("quiet_inspections")),
   },
   {
@@ -2342,9 +2409,9 @@ const ENDINGS = [
       "Your choices push both states to the lip of catastrophe. Nuclear weapons are not launched in this timeline, but command systems, public messaging, and military posture are all strained to the breaking point.",
     when: () =>
       state.defcon === 1 &&
-      state.readiness >= 82 &&
-      state.relations <= 25 &&
-      state.escalationMomentum >= 68 &&
+      state.readiness >= 78 &&
+      state.relations <= 30 &&
+      state.escalationMomentum >= 64 &&
       !state.decisionFlags.has("authentication_crisis_ignored"),
   },
   {
@@ -2353,13 +2420,14 @@ const ENDINGS = [
     summary:
       "A chain of failures collapses restraint on both sides. Nuclear exchange spreads beyond the original crisis, allied commitments trigger wider launches, and the simulation ends with the destruction of the world students knew.",
     when: () =>
-      state.defcon <= 1 &&
-      state.readiness >= 90 &&
-      state.relations <= 18 &&
-      state.decisionFlags.has("authentication_crisis_ignored") &&
-      state.decisionFlags.has("field_flexibility_granted") &&
-      state.escalationMomentum >= 82 &&
-      state.commandPressure >= 78,
+      state.defcon === 1 &&
+      state.readiness >= 86 &&
+      state.relations <= 22 &&
+      state.escalationMomentum >= 80 &&
+      state.commandPressure >= 76 &&
+      (state.decisionFlags.has("authentication_crisis_ignored") ||
+        state.decisionFlags.has("field_flexibility_granted") ||
+        state.complicationCount >= 5),
   },
   {
     title: "Limited Nuclear Exchange",
@@ -2367,13 +2435,14 @@ const ENDINGS = [
     summary:
       "Miscalculation and compressed decision time lead to nuclear use on a limited scale. The world survives, but cities do not, and the political order that follows will be shaped by trauma, ash, and permanent fear.",
     when: () =>
-      state.defcon <= 1 &&
-      state.readiness >= 84 &&
-      state.relations <= 24 &&
-      state.escalationMomentum >= 72 &&
+      state.defcon === 1 &&
+      state.readiness >= 80 &&
+      state.relations <= 30 &&
+      state.escalationMomentum >= 70 &&
       (state.decisionFlags.has("decapitation_scare_uncontained") ||
         state.decisionFlags.has("authentication_crisis_ignored") ||
-        (state.complicationCount >= 4 && state.commandPressure >= 74)),
+        state.decisionFlags.has("field_flexibility_granted") ||
+        (state.complicationCount >= 4 && state.commandPressure >= 70)),
   },
   {
     title: "Fragile Off-Ramp",
@@ -2418,6 +2487,12 @@ function educatorDebrief(ending) {
   } else {
     notes.push(
       "You avoided the most extreme military postures. That reduced immediate danger, though it sometimes made domestic politics and alliance management harder."
+    );
+  }
+
+  if (state.complicationCount >= 2) {
+    notes.push(
+      "Several reasonable-looking decisions produced unintended backlash in this run. That is intentional: mistrust, weak credibility, and pressure can twist even responsible crisis management into worse outcomes."
     );
   }
 
