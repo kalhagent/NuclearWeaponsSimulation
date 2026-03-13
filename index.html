@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Operation Narrow Horizon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="scanlines" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">National Command Interface</p>
+          <h1>Operation Narrow Horizon</h1>
+        </div>
+        <div class="topbar-status">
+          <div class="badge badge-live">
+            <span class="status-light"></span>
+            Live simulation
+          </div>
+          <div class="badge" id="turnBadge">Decision 0 / 0</div>
+        </div>
+      </header>
+
+      <section class="dashboard">
+        <aside class="panel panel-sidebar">
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>DEFCON</h2>
+              <span class="small-label" id="defconLabel">Stable Alert</span>
+            </div>
+            <div class="defcon-display">
+              <div class="defcon-number" id="defconValue">4</div>
+              <div class="defcon-track" id="defconTrack" aria-label="DEFCON tracker"></div>
+            </div>
+          </div>
+
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>Monitoring</h2>
+              <span class="small-label">Systems nominal</span>
+            </div>
+            <div class="monitor-grid">
+              <div class="monitor-tile">
+                <span class="monitor-name">Diplomatic relations</span>
+                <div class="meter"><span id="relationsMeter"></span></div>
+                <strong id="relationsValue">50</strong>
+              </div>
+              <div class="monitor-tile">
+                <span class="monitor-name">Military readiness</span>
+                <div class="meter"><span id="readinessMeter"></span></div>
+                <strong id="readinessValue">50</strong>
+              </div>
+              <div class="monitor-tile">
+                <span class="monitor-name">Public stability</span>
+                <div class="meter"><span id="stabilityMeter"></span></div>
+                <strong id="stabilityValue">55</strong>
+              </div>
+              <div class="monitor-tile">
+                <span class="monitor-name">Intel confidence</span>
+                <div class="meter"><span id="intelMeter"></span></div>
+                <strong id="intelValue">50</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>Signal Board</h2>
+              <span class="small-label">Live feeds</span>
+            </div>
+            <div class="signal-board">
+              <span class="signal-dot amber"></span>
+              <span class="signal-dot green"></span>
+              <span class="signal-dot red"></span>
+              <span class="signal-dot blue"></span>
+              <span class="signal-dot amber"></span>
+              <span class="signal-dot green"></span>
+              <span class="signal-dot blue"></span>
+              <span class="signal-dot red"></span>
+              <span class="signal-dot green"></span>
+              <span class="signal-dot amber"></span>
+              <span class="signal-dot red"></span>
+              <span class="signal-dot blue"></span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="panel panel-main">
+          <div class="radar-wrap" aria-hidden="true">
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-sweep"></div>
+            <span class="radar-blip blip-a"></span>
+            <span class="radar-blip blip-b"></span>
+            <span class="radar-blip blip-c"></span>
+          </div>
+
+          <div class="scenario-header">
+            <div>
+              <p class="eyebrow">Fictional crisis briefing</p>
+              <h2 id="screenTitle">Awaiting command</h2>
+            </div>
+            <div class="badge badge-outline" id="phaseBadge">Phase: Briefing</div>
+          </div>
+
+          <article class="narrative" id="screenBody"></article>
+
+          <div class="choice-wrap" id="choices"></div>
+
+          <div class="start-wrap" id="startWrap">
+            <p>
+              You are the President of Norhaven. Overnight, a naval collision in
+              the Gray Strait has triggered a fast-moving crisis with the rival
+              nuclear state of the Vesper Republic.
+            </p>
+            <button class="primary-button" id="startButton">Enter command center</button>
+          </div>
+        </section>
+
+        <aside class="panel panel-sidebar">
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>Situation Log</h2>
+              <span class="small-label">Recent events</span>
+            </div>
+            <ul class="event-log" id="eventLog"></ul>
+          </div>
+
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>Advisory Tags</h2>
+              <span class="small-label">Active conditions</span>
+            </div>
+            <div class="tag-list" id="tagList"></div>
+          </div>
+
+          <div class="panel-block">
+            <div class="panel-title-row">
+              <h2>Outcome Lens</h2>
+              <span class="small-label">After-action ready</span>
+            </div>
+            <p class="mini-copy">
+              Your decisions shape military posture, diplomatic channels,
+              public trust, and the risk of nuclear escalation.
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <template id="choiceTemplate">
+      <button class="choice-card">
+        <span class="choice-label"></span>
+        <span class="choice-effect"></span>
+      </button>
+    </template>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
